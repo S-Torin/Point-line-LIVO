@@ -1,0 +1,93 @@
+common:
+    lid_topic: "/livox/lidar"
+    imu_topic: "/livox/imu"
+    img_topic: "/left_camera/image"
+    imu_time_offset: 0.
+    img_time_offset: 0.1
+
+lidar_handler:
+    enable: true
+    pcd_save_en: false
+    lidar_type: "livox" # ["velodyne", "livox", "Ouster"]
+    num_scans: 6
+    voxel_size: 0.2
+    filter_num: 1
+    min_range: 1
+    max_range: 1000
+    max_iter_times: 3
+    meas_cov: 0.001
+    time_scale: "ns"
+    offset_ril: [ 1., 0., 0., 0., 1., 0., 0., 0., 1.]
+    offset_til: [ 0.04165, 0.02326, -0.0284 ]
+    pub_interval: 1
+
+imu_handler:
+    cov_acc: 0.1
+    cov_gyr: 0.1
+    cov_acc_bias: 0.0001
+    cov_gyr_bias: 0.0001
+    gravity: 9.81
+    init_iter_times: 200
+    inverse_acc_direction: false
+
+cam_handler:
+    enable: true
+    pcd_save_en: false
+    cam_model: Pinhole
+    cam_width: 1280
+    cam_height: 1024
+    scale: 2.
+    grid_size: 80
+    patch_size: 8
+    optical_layer: 3
+    max_iter_times: 5
+    meas_cov : 100.
+    pub_interval: 1
+
+    # HKU_Landmark, HKU_Centennial_Garden, HKU_Main_Building, HKU_Cultural_Center_01, HKU_Cultural_Center_02, HKU_Lecture_Center_01, HKU_Lecture_Center_02
+    # CBD_Building_02, CBD_Building_03
+    intrinsic: [1176.2874292149932, 1176.21585445307, 592.1187382755453, 509.0864309628322] # [fx, fy, cx, cy]
+    coeff: [-0.13218037625958456, 0.15360732717073536, 0.00036918417348059815, -0.00031715324469463964, 0.] # [k1, k2, p1, p2, k3]
+    offset_ric: [-0.00200, -0.00366,  0.99999,
+                -0.99975,  0.02212, -0.00192,
+                -0.02211, -0.99975, -0.00371]
+    offset_tic: [0.04771023, 0.02472947, 0.02219307]
+
+    # Retail_Street, CBD_Building_01, Bright_Screen_Wall
+    # intrinsic: [1293.56944, 1293.3155, 626.91359, 522.799224] # [fx, fy, cx, cy]
+    # coeff: [-0.076160, 0.123001, -0.00113, 0.000251, 0.] # [k1, k2, p1, p2, k3]
+    # offset_ric: [0.00610193, -0.00615449, 0.999962,
+    #             -0.999863, 0.0153796, 0.00619598,
+    #             -0.0154172, -0.999863, -0.0060598]
+    # offset_tic: [0.06736994, 0.04124177, 0.07642167]
+
+    # HIT_Graffiti_Wall_01, HIT_Graffiti_Wall_02, HIT_Graffiti_Wall_03, HIT_Graffiti_Wall_04
+    # SYSU_01, SYSU_02
+    # intrinsic: [1311.89517127580, 1311.36488586115, 656.523841857393, 504.136322840350] # [fx, fy, cx, cy]
+    # coeff: [-0.0780830982640722, 0.146382433670493, -0.00110111633050301, -0.00110752991013068, 0.] # [k1, k2, p1, p2, k3]
+    # offset_ric: [-0.0036250,  0.0075568,  0.9999649,
+    #             -0.9998907,  0.0143083, -0.0037329,
+    #             -0.0143360, -0.9998690,  0.0075041]
+    # offset_tic: [0.00892753, 0.02785541, 0.04263787]
+
+hybrid_map:
+    show_log: false
+    max_layer: 3
+    max_voxel_size: 0.5
+    max_point_num: 1000
+    planer_threshold: [0.05, 0.05, 0.05, 0.05, 0.05]
+    min_point_nums: [ 5, 5, 5, 5, 5 ]
+    point_resolution: 0.05
+    feat_resolution: 0.5
+    pub_interval: 10
+    init_iter_times: 5
+
+livo:
+    init_cov_rot: 1.
+    init_cov_pos: 1.
+    init_cov_vel: 1.
+    init_cov_bg: 0.0001
+    init_cov_ba: 0.001
+    init_cov_g: 0.00001
+    init_cov_r_i_l: 0.00001
+    init_cov_t_i_l: 0.00001

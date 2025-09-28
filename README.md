@@ -27,7 +27,7 @@ Point-Line LIVO is a LiDAR-visual-inertial Odometry employing both visual Point 
 
 <!-- - [2025-11-xx] Point-Line LIVO2 is unveiled! 🎉 [[`Paper`](#)] [[`Page`](#)] [[`bilibili`](#)] (to be released here) -->
 - [2025-10-xx] Based on Point-Line LIVO, our Gaussian Splatting Mapping system (LIV-GSM) is unveiled! 🎉 [[`Paper`](#)] [[`Page`](https://s-torin.github.io/project-liv-gsm/)] [[`bilibili`](#)] (to be released here)
-- [2025-10-xx] The enhanced version of the Point-Line LIVO code is released!
+- [2025-9-28] The enhanced version of the Point-Line LIVO code is released!
 
 ### 💌 Contact
 
@@ -51,7 +51,7 @@ We test on ubuntu 20.04.
 
 ## Run
 
-- Download [FAST-LIVO Dataset](https://connecthkuhk-my.sharepoint.com/personal/zhengcr_connect_hku_hk/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fzhengcr%5Fconnect%5Fhku%5Fhk%2FDocuments%2FFAST%2DLIVO%2DDatasets&ga=1) or [R3LIVE Dataset](https://github.com/ziv-lin/r3live_dataset) or [FAST-LIVO2 Dataset](https://connecthkuhk-my.sharepoint.com/personal/zhengcr_connect_hku_hk/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fzhengcr%5Fconnect%5Fhku%5Fhk%2FDocuments%2Ffast%2Dlivo2%2Ddataset&ga=1) or [SEU Dataset](https://github.com/S-Torin/).
+- Download [FAST-LIVO Dataset](https://connecthkuhk-my.sharepoint.com/:f:/g/personal/zhengcr_connect_hku_hk/Esiqlmaql0dPreuOhiHlXl4Bqu5RRRIViK1EyuR4h1_n4w?e=fZdVn0) or [R3LIVE Dataset](https://github.com/ziv-lin/r3live_dataset) or [FAST-LIVO2 Dataset](https://connecthkuhk-my.sharepoint.com/:f:/g/personal/zhengcr_connect_hku_hk/ErdFNQtjMxZOorYKDTtK4ugBkogXfq1OfDm90GECouuIQA?e=KngY9Z) or [SEU Dataset](https://github.com/S-Torin/).
 
 + Launch Point-Line LIVO.
 
@@ -92,7 +92,7 @@ If you find our work helpful, please consider citing 🌟:
 
 ## Acknowledgement
 
-Thanks for [FAST-LIO](https://github.com/hku-mars/FAST_LIO.git), [Voxel-Map](https://github.com/hku-mars/VoxelMap.git), [FAST-LIVO](https://github.com/hku-mars/FAST-LIVO.git), [FAST-LIVO2](https://github.com/hku-mars/FAST-LIVO2.git) and [LIV-GSM](https://s-torin.github.io/LIV-GSM/).
+Thanks for [FAST-LIO](https://github.com/hku-mars/FAST_LIO.git), [Voxel-Map](https://github.com/hku-mars/VoxelMap.git), [FAST-LIVO](https://github.com/hku-mars/FAST-LIVO.git), [FAST-LIVO2](https://github.com/hku-mars/FAST-LIVO2.git) and [LIV-GSM](https://s-torin.github.io/project-liv-gsm/).
 
 ## LICENSE
 

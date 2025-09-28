@@ -1,0 +1,75 @@
+common:
+    lid_topic:  "/livox/lidar"
+    imu_topic:  "/livox/imu"
+    img_topic:  "/camera/image_color"
+    imu_time_offset: 0.
+    img_time_offset: 0.
+
+lidar_handler:
+    enable: true
+    pcd_save_en: false
+    lidar_type: "livox" # ["velodyne", "livox", "Ouster"]
+    num_scans: 6
+    voxel_size: 0.2
+    filter_num: 4
+    min_range: 1.0
+    max_range: 1000
+    max_iter_times: 4
+    meas_cov: 0.001
+    time_scale: "ns"
+    offset_ril: [ 1., 0., 0.,
+                   0., 1., 0.,
+                   0., 0., 1.]
+    offset_til: [ 0.04165, 0.02326, -0.0284 ]
+    pub_interval: 1
+
+imu_handler:
+    cov_acc: 0.5
+    cov_gyr: 0.2
+    cov_acc_bias: 0.0001
+    cov_gyr_bias: 0.0001
+    gravity: 9.81
+    init_iter_times: 200
+    inverse_acc_direction: false
+
+cam_handler:
+    enable: true
+    pcd_save_en: false
+    cam_model: Pinhole
+    cam_width: 1280
+    cam_height: 1024
+    intrinsic: [863.424, 863.417, 640.6808, 518.3392] # [fx, fy, cx, cy]
+    coeff: [-0.1080, 0.1050, -1.2872e-04, 5.7923e-05, -0.0222] # [k1, k2, p1, p2, k3]
+    scale: 2.
+    grid_size: 80
+    patch_size: 8
+    optical_layer: 3
+    max_iter_times: 5
+    meas_cov : 1000.
+    offset_ric: [ -0.00113207, -0.0158688, 0.999873,
+                -0.9999999, -0.000486594, -0.00113994,
+                0.000504622, -0.999874, -0.0158682 ]
+    offset_tic: [ 0.050166, 0.0474116, -0.0312415 ]
+    pub_interval: 1
+
+hybrid_map:
+    show_log: false
+    max_layer: 3
+    max_voxel_size: 0.5
+    max_point_num: 1000
+    planer_threshold: [0.05, 0.05, 0.05, 0.05, 0.05]
+    min_point_nums: [ 5, 5, 5, 5, 5 ]
+    point_resolution: 0.025
+    feat_resolution: 0.2
+    pub_interval: 10
+    init_iter_times: 5
+
+livo:
+    init_cov_rot: 1.
+    init_cov_pos: 1.
+    init_cov_vel: 1.
+    init_cov_bg: 0.0001
+    init_cov_ba: 0.001
+    init_cov_g: 0.00001
+    init_cov_r_i_l: 0.00001
+    init_cov_t_i_l: 0.00001

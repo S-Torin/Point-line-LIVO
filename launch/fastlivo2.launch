@@ -1,0 +1,14 @@
+<launch>
+    <arg name="rviz" default="true" />
+
+    <param name="config_path" type="string" value="$(find livo)/config/fastlivo2.yaml" />
+
+    <param name="glog_location" type="string" value="$(find livo)/Log/glog" />
+
+    <node pkg="livo" type="run_livo" name="livo" output="screen"/>
+
+    <group if="$(arg rviz)">
+        <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find livo)/rviz_cfg/livo.rviz" />
+    </group>
+
+</launch>
