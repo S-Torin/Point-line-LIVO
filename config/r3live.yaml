@@ -41,11 +41,12 @@ cam_handler:
     intrinsic: [863.424, 863.417, 640.6808, 518.3392] # [fx, fy, cx, cy]
     coeff: [-0.1080, 0.1050, -1.2872e-04, 5.7923e-05, -0.0222] # [k1, k2, p1, p2, k3]
     scale: 2.
-    grid_size: 80
+    grid_size: 20
     patch_size: 8
     optical_layer: 3
     max_iter_times: 5
     meas_cov : 1000.
+    outlier_thre: 1000.
     offset_ric: [ -0.00113207, -0.0158688, 0.999873,
                 -0.9999999, -0.000486594, -0.00113994,
                 0.000504622, -0.999874, -0.0158682 ]

@@ -87,7 +87,8 @@ CamHandler::CamHandler(const YAML::Node& config, ros::NodeHandle& nh,
   optical_layer_ = config["optical_layer"].as<int32_t>(3);
   max_iter_times_ = config["max_iter_times"].as<int32_t>(3);
   pub_interval_ = config["pub_interval"].as<int32_t>(1);
-  meas_cov_ = config["meas_cov"].as<double>(100.);
+  meas_cov_ = config["meas_cov"].as<float>(100.f);
+  outlier_thre_ = config["outlier_thre"].as<float>(1000.f);
   img_pyr_.resize(optical_layer_);
 
   grid_nums_ = (width_ / grid_size_ + 1) * (height_ / grid_size_ + 1);
@@ -331,6 +332,7 @@ bool CamHandler::Observation(const Ikfom::IkfomState& x, int32_t layer,
     Eigen::Matrix2f affine = Eigen::Matrix2f::Identity();
     affine.col(0) = du_uv - uv;
     affine.col(1) = dv_uv - uv;
+    float total_error = 0.f;
     for (int32_t u = -half_patch_size_; u <= half_patch_size_; ++u) {
       for (int32_t v = -half_patch_size_; v <= half_patch_size_; ++v) {
         int32_t patch_index = (v + half_patch_size_) * (2 * half_patch_size_ + 1) +
@@ -339,12 +341,18 @@ bool CamHandler::Observation(const Ikfom::IkfomState& x, int32_t layer,
         Eigen::Matrix<float, 1, 2> d_img_uv = Eigen::Matrix<float, 1, 2>::Zero();
         float l_ref = ref_patch.at(patch_index);
         float l_cur = InterpolateMat8u(img_pyr_.at(layer), uv * scale + uv_patch, &d_img_uv);
+        total_error += std::pow(std::abs(l_cur - l_ref), 2);
         int32_t obs_idx = i * ppatch_area + patch_index;
         assert(obs_idx < pobs_size);
         (*r)(obs_idx) = -(l_cur - l_ref);
         h->row(obs_idx) << scale * jacobian(d_img_uv, pt_c, x);
         (*c)(obs_idx) = meas_cov_;
       }
+    }
+    if (total_error > outlier_thre_ * ppatch_area) {
+      grid_ptracked_.at(pobs_index.at(i)) = false;
+      h->block(i * ppatch_area, 0, ppatch_area, h->cols()).setZero();
+      r->segment(i * ppatch_area, ppatch_area).setZero();
     }
   }
   // compute residual and jacobian for line features
@@ -375,6 +383,7 @@ bool CamHandler::Observation(const Ikfom::IkfomState& x, int32_t layer,
     Eigen::Matrix2f affine = Eigen::Matrix2f::Identity();
     affine.col(0) = du_uv - uv;
     affine.col(1) = dv_uv - uv;
+    float total_error = 0.f;
     for (int32_t u = -half_patch_size_ * 2; u <= half_patch_size_ * 2; ++u) {
       for (int32_t v = -half_patch_size_ / 2; v <= half_patch_size_ / 2; ++v) {
         int32_t patch_index = (v + half_patch_size_ / 2) * (4 * half_patch_size_ + 1) +
@@ -383,12 +392,18 @@ bool CamHandler::Observation(const Ikfom::IkfomState& x, int32_t layer,
         Eigen::Matrix<float, 1, 2> d_img_uv = Eigen::Matrix<float, 1, 2>::Zero();
         float l_ref = ref_patch.at(patch_index);
         float l_cur = InterpolateMat8u(img_pyr_.at(layer), uv * scale + uv_patch, &d_img_uv);
+        total_error += std::pow(std::abs(l_cur - l_ref), 2);
         int32_t obs_idx = pobs_size + i * lpatch_area + patch_index;
         assert(obs_idx < obs_size);
         (*r)(obs_idx) = -(l_cur - l_ref);
         h->row(obs_idx) << scale * jacobian(d_img_uv, pt_c, x);
         (*c)(obs_idx) = meas_cov_;
       }
+    }
+    if (total_error > outlier_thre_ * lpatch_area) {
+      grid_ltracked_.at(lobs_index.at(i)) = false;
+      h->block(pobs_size + i * lpatch_area, 0, lpatch_area, h->cols()).setZero();
+      r->segment(pobs_size + i * lpatch_area, lpatch_area).setZero();
     }
   }
   double t4 = omp_get_wtime();
@@ -1308,10 +1323,6 @@ void CamHandler::Publish() {
   const auto& rgb_type = sensor_msgs::image_encodings::BGR8;
   if (pub_feat_.getNumSubscribers() > 0) {
     cv::Mat feat_img = img_rgb_.clone();
-    for (int32_t col = 0; col < width_; col += grid_size_)
-      cv::line(feat_img, cv::Point(col, 0), cv::Point(col, height_ - 1), cv::Scalar(255, 255, 255), 1);
-    for (int32_t row = 0; row < width_; row += grid_size_)
-      cv::line(feat_img, cv::Point(0, row), cv::Point(width_ - 1, row), cv::Scalar(255, 255, 255), 1);
     for (int32_t i = 0; i < grid_nums_; ++i) {
       if (grid_ptracked_.at(i)) {
         const VoxelVisualPtr& feats = grid_pfeat_.at(i);

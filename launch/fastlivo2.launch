@@ -11,4 +11,6 @@
         <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find livo)/rviz_cfg/livo.rviz" />
     </group>
 
+    <node pkg="image_transport" type="republish" name="republish" args="compressed in:=/left_camera/image raw out:=/left_camera/image" output="screen" respawn="true"/>
+
 </launch>

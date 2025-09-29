@@ -119,7 +119,8 @@ class CamHandler final {
   int32_t max_iter_times_ = 3;
   int32_t pub_interval_ = 10;
   int32_t line_sample_num_ = 5;
-  double meas_cov_ = 100;
+  float meas_cov_ = 100;
+  float outlier_thre_ = 1000.f;
   Eigen::Matrix3f ric_ = Eigen::Matrix3f::Identity();
   Eigen::Vector3f tic_ = Eigen::Vector3f::Zero();
 

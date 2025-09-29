@@ -10,7 +10,7 @@ lidar_handler:
     pcd_save_en: false
     lidar_type: "livox" # ["velodyne", "livox", "Ouster"]
     num_scans: 6
-    voxel_size: 0.2
+    voxel_size: 0.1
     filter_num: 1
     min_range: 1
     max_range: 1000
@@ -37,11 +37,12 @@ cam_handler:
     cam_width: 1280
     cam_height: 1024
     scale: 2.
-    grid_size: 80
+    grid_size: 20
     patch_size: 8
     optical_layer: 3
     max_iter_times: 5
     meas_cov : 100.
+    outlier_thre: 1000.
     pub_interval: 1
 
     # HKU_Landmark, HKU_Centennial_Garden, HKU_Main_Building, HKU_Cultural_Center_01, HKU_Cultural_Center_02, HKU_Lecture_Center_01, HKU_Lecture_Center_02
