@@ -146,7 +146,7 @@ void CamHandler::InputImage(const sensor_msgs::Image::ConstPtr& img_msg,
   // clahe->apply(img_pyr_.at(0), img_pyr_.at(0));
 
   for (int32_t i = 1; i < optical_layer_; ++i) {
-    cv::resize(img_pyr_.at(i - 1), img_pyr_.at(i), cv::Size(), 0.5, 0.5, cv::INTER_AREA);
+    cv::resize(img_pyr_.at(i - 1), img_pyr_.at(i), cv::Size(), 0.5, 0.5, cv::INTER_LINEAR);
   }
 
   double t2 = omp_get_wtime();  // track vis points and lines from map
@@ -742,9 +742,7 @@ bool CamHandler::PointLMVDE(const cv::Point2f& pix_point,
   feat_point.is_valid = 0u;
 
   LIVOPoint query_pt;
-  query_pt.x = query_w.x();
-  query_pt.y = query_w.y();
-  query_pt.z = query_w.z();
+  query_pt.getVector3fMap() = query_w;
   VoxelSurfelConstPtr near_surf = local_map_->GetNearestSurfel(query_pt);
   if (near_surf == nullptr || near_surf->sigma[0] > 0.05) return false;
 
@@ -784,12 +782,54 @@ bool CamHandler::PointLMVDE(const cv::Point2f& pix_point,
   Eigen::Vector3f intersect_dv_c = dv_t * ray_dv_dir;
   Eigen::Vector3f intersect_dv_w = cam2world(intersect_dv_c);
 
-  float scale = half_patch_size_ * std::pow(2.f, optical_layer_ - 1);
-
-  if ((intersect_w - near_surf->center).norm() > 3 * near_surf->sigma[1] ||
-      (intersect_du_w - intersect_w).norm() * scale > 3 * near_surf->sigma[1] ||
-      (intersect_dv_w - intersect_w).norm() * scale > 3 * near_surf->sigma[1])
+  if ((intersect_w - near_surf->center).norm() > 3 * near_surf->sigma[1])
     return false;
+
+  float scale = half_patch_size_ * std::pow(2.f, optical_layer_ - 1);
+  Eigen::Vector3f maigin_du_w1 = intersect_w + scale * (intersect_du_w - intersect_w);
+  Eigen::Vector3f maigin_du_w2 = intersect_w + scale * (intersect_w - intersect_du_w);
+  Eigen::Vector3f maigin_dv_w1 = intersect_w + scale * (intersect_dv_w - intersect_w);
+  Eigen::Vector3f maigin_dv_w2 = intersect_w + scale * (intersect_w - intersect_dv_w);
+  LIVOPoint query_margin_du1;
+  query_margin_du1.getVector3fMap() = maigin_du_w1;
+  LIVOPoint query_margin_du2;
+  query_margin_du2.getVector3fMap() = maigin_du_w2;
+  LIVOPoint query_margin_dv1;
+  query_margin_dv1.getVector3fMap() = maigin_dv_w1;
+  LIVOPoint query_margin_dv2;
+  query_margin_dv2.getVector3fMap() = maigin_dv_w2;
+  VoxelSurfelConstPtr near_surf_du1 = local_map_->GetNearestSurfel(query_margin_du1);
+  VoxelSurfelConstPtr near_surf_du2 = local_map_->GetNearestSurfel(query_margin_du2);
+  VoxelSurfelConstPtr near_surf_dv1 = local_map_->GetNearestSurfel(query_margin_dv1);
+  VoxelSurfelConstPtr near_surf_dv2 = local_map_->GetNearestSurfel(query_margin_dv2);
+
+  if (near_surf_du1 == nullptr || near_surf_dv1 == nullptr ||
+      near_surf_du2 == nullptr || near_surf_dv2 == nullptr)
+    return false;
+
+  const float angle_threshold = std::cos(1.0f * M_PI / 180.0f);
+  float dot_du1 = near_surf->normal.dot(near_surf_du1->normal);
+  float dot_du2 = near_surf->normal.dot(near_surf_du2->normal);
+  float dot_dv1 = near_surf->normal.dot(near_surf_dv1->normal);
+  float dot_dv2 = near_surf->normal.dot(near_surf_dv2->normal);
+  if (std::abs(dot_du1) < angle_threshold || std::abs(dot_dv1) < angle_threshold ||
+      std::abs(dot_du2) < angle_threshold || std::abs(dot_dv2) < angle_threshold) {
+    return false;
+  }
+
+  Eigen::Vector3f center_diff_du1 = near_surf_du1->center - near_surf->center;
+  Eigen::Vector3f center_diff_du2 = near_surf_du2->center - near_surf->center;
+  Eigen::Vector3f center_diff_dv1 = near_surf_dv1->center - near_surf->center;
+  Eigen::Vector3f center_diff_dv2 = near_surf_dv2->center - near_surf->center;
+  float proj_dist_du1 = std::abs(center_diff_du1.dot(near_surf->normal));
+  float proj_dist_du2 = std::abs(center_diff_du2.dot(near_surf->normal));
+  float proj_dist_dv1 = std::abs(center_diff_dv1.dot(near_surf->normal));
+  float proj_dist_dv2 = std::abs(center_diff_dv2.dot(near_surf->normal));
+  float distance_threshold = 3.0f * near_surf->sigma[0];
+  if (proj_dist_du1 > distance_threshold || proj_dist_dv1 > distance_threshold ||
+      proj_dist_du2 > distance_threshold || proj_dist_dv2 > distance_threshold) {
+    return false;
+  }
 
   feat_point.x = intersect_w.x();
   feat_point.y = intersect_w.y();
@@ -884,13 +924,61 @@ bool CamHandler::LineLMVDE(const cv::Vec4f& pix_line, VisualFeat& feat_line,
     Eigen::Vector3f intersect_dv_c = dv_t * ray_dv_dir;
     Eigen::Vector3f intersect_dv_w = cam2world(intersect_dv_c);
 
+    if ((intersect_w - near_surf->center).norm() > 3 * near_surf->sigma[1])
+      continue;
+
     float scale_du = half_patch_size_ * 2 * std::pow(2.f, optical_layer_ - 1);
     float scale_dv = half_patch_size_ / 2 * std::pow(2.f, optical_layer_ - 1);
 
-    if ((intersect_w - near_surf->center).norm() > 3 * near_surf->sigma[1] ||
-        (intersect_du_w - intersect_w).norm() * scale_du > 3 * near_surf->sigma[1] ||
-        (intersect_dv_w - intersect_w).norm() * scale_dv > 3 * near_surf->sigma[1])
+    Eigen::Vector3f maigin_du_w1 = intersect_w + scale_du * (intersect_du_w - intersect_w);
+    Eigen::Vector3f maigin_du_w2 = intersect_w + scale_du * (intersect_w - intersect_du_w);
+    Eigen::Vector3f maigin_dv_w1 = intersect_w + scale_dv * (intersect_dv_w - intersect_w);
+    Eigen::Vector3f maigin_dv_w2 = intersect_w + scale_dv * (intersect_w - intersect_dv_w);
+
+    LIVOPoint query_margin_du1;
+    query_margin_du1.getVector3fMap() = maigin_du_w1;
+    LIVOPoint query_margin_du2;
+    query_margin_du2.getVector3fMap() = maigin_du_w2;
+    LIVOPoint query_margin_dv1;
+    query_margin_dv1.getVector3fMap() = maigin_dv_w1;
+    LIVOPoint query_margin_dv2;
+    query_margin_dv2.getVector3fMap() = maigin_dv_w2;
+
+    VoxelSurfelConstPtr near_surf_du1 = local_map_->GetNearestSurfel(query_margin_du1);
+    VoxelSurfelConstPtr near_surf_du2 = local_map_->GetNearestSurfel(query_margin_du2);
+    VoxelSurfelConstPtr near_surf_dv1 = local_map_->GetNearestSurfel(query_margin_dv1);
+    VoxelSurfelConstPtr near_surf_dv2 = local_map_->GetNearestSurfel(query_margin_dv2);
+
+    if (near_surf_du1 == nullptr || near_surf_dv1 == nullptr ||
+        near_surf_du2 == nullptr || near_surf_dv2 == nullptr)
       continue;
+
+    const float angle_threshold = std::cos(1.0f * M_PI / 180.0f);
+    float dot_du1 = near_surf->normal.dot(near_surf_du1->normal);
+    float dot_du2 = near_surf->normal.dot(near_surf_du2->normal);
+    float dot_dv1 = near_surf->normal.dot(near_surf_dv1->normal);
+    float dot_dv2 = near_surf->normal.dot(near_surf_dv2->normal);
+
+    if (std::abs(dot_du1) < angle_threshold || std::abs(dot_dv1) < angle_threshold ||
+        std::abs(dot_du2) < angle_threshold || std::abs(dot_dv2) < angle_threshold) {
+      continue;
+    }
+
+    Eigen::Vector3f center_diff_du1 = near_surf_du1->center - near_surf->center;
+    Eigen::Vector3f center_diff_du2 = near_surf_du2->center - near_surf->center;
+    Eigen::Vector3f center_diff_dv1 = near_surf_dv1->center - near_surf->center;
+    Eigen::Vector3f center_diff_dv2 = near_surf_dv2->center - near_surf->center;
+
+    float proj_dist_du1 = std::abs(center_diff_du1.dot(near_surf->normal));
+    float proj_dist_du2 = std::abs(center_diff_du2.dot(near_surf->normal));
+    float proj_dist_dv1 = std::abs(center_diff_dv1.dot(near_surf->normal));
+    float proj_dist_dv2 = std::abs(center_diff_dv2.dot(near_surf->normal));
+
+    float distance_threshold = 3.0f * near_surf->sigma[0];
+    if (proj_dist_du1 > distance_threshold || proj_dist_dv1 > distance_threshold ||
+        proj_dist_du2 > distance_threshold || proj_dist_dv2 > distance_threshold) {
+      continue;
+    }
 
     feat_samples.at(i).x = intersect_w.x();
     feat_samples.at(i).y = intersect_w.y();
