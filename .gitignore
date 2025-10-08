@@ -1,0 +1,14 @@
+Log/*
+!Log/eval
+!Log/convert.py
+!Log/glog/0
+!Log/plot_performance.py
+*.csv
+*.pcd
+*.png
+*.pyc
+*.ipynb
+*submodules*
+*.ply
+*.db
+*.bin
